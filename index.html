@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pie Chart App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/dist/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>
+  <style>
+    .dark-mode {
+      filter: invert(1);
+      background-color: #222;
+    }
+    .dark-mode canvas {
+      filter: invert(1);
+    }
+    body.dark-mode .pcr-app,
+    body.dark-mode .pcr {
+      filter: invert(1) !important;
+    }
+    .color-picker {
+      display: inline-block;
+      min-width: 200px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16 2xl:p-20">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">Pie Chart App</h1>
+    <div class="flex flex-wrap justify-center gap-4 mb-6">
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="add-button">Add Element</button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="export-button">Export CSV</button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="import-button">Import CSV</button>
+      <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="dark-mode-button">🌓</button>
+    </div>
+    <div class="mb-6" id="form-container"></div>
+    <div class="overflow-x-auto">
+      <table class="table-auto w-full mb-6">
+        <thead>
+          <tr>
+            <th class="px-4 py-2">Name</th>
+            <th class="px-4 py-2">Description</th>
+            <th class="px-4 py-2">Color</th>
+            <th class="px-4 py-2">Percentage</th>
+            <th class="px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="elements-tbody"></tbody>
+      </table>
+    </div>
+    <div class="w-full" style="height: 400px;">
+      <canvas id="pie-chart" class="w-full h-full"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let elements = [];
+    let chart;
+    let darkMode = false;
+    let pickrAdd, pickrEdit; 
+
+    function getComplementary(hex) {
+      hex = hex.replace('#', '');
+      let r = parseInt(hex.substr(0, 2), 16);
+      let g = parseInt(hex.substr(2, 2), 16);
+      let b = parseInt(hex.substr(4, 2), 16);
+      let compR = (255 - r).toString(16).padStart(2, '0');
+      let compG = (255 - g).toString(16).padStart(2, '0');
+      let compB = (255 - b).toString(16).padStart(2, '0');
+      return '#' + compR + compG + compB;
+    }
+
+    document.getElementById('add-button').addEventListener('click', () => {
+      const form = `
+        <form id="add-form" class="max-w-md mx-auto">
+          <label class="block text-sm font-medium text-gray-700">Name</label>
+          <input type="text" id="name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">Description</label>
+          <input type="text" id="description" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+          <label class="block text-sm font-medium text-gray-700">Color</label>
+          <div id="color-picker-add" class="color-picker mb-4"></div>
+          <label class="block text-sm font-medium text-gray-700">Percentage</label>
+          <input type="number" id="percentage" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+          <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add</button>
+        </form>
+      `;
+      document.getElementById('form-container').innerHTML = form;
+
+      pickrAdd = Pickr.create({
+        el: '#color-picker-add',
+        theme: 'classic',
+        default: '#ffffff',
+        components: {
+          preview: true,
+          opacity: true,
+          hue: true,
+          interaction: {
+            input: true,
+            save: true
+          }
+        }
+      });
+
+      document.getElementById('add-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const description = document.getElementById('description').value;
+        const color = pickrAdd.getColor() ? pickrAdd.getColor().toHEXA().toString() : '#ffffff';
+        const percentage = document.getElementById('percentage').value;
+        elements.push({ name, description, color, percentage: percentage ? parseInt(percentage) : null });
+        updateTable();
+        updateChart();
+        document.getElementById('form-container').innerHTML = '';
+        pickrAdd.destroyAndRemove();
+      });
+    });
+
+    document.getElementById('export-button').addEventListener('click', () => {
+      const csv = elements.map((element) => [
+        element.name,
+        element.description,
+        element.color,
+        element.percentage !== null ? element.percentage.toString() : '',
+      ]).reduce((acc, curr) => acc + curr.join(',') + '\n', 'Name,Description,Color,Percentage\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'elements.csv';
+      a.click();
+    });
+
+    document.getElementById('import-button').addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv';
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const csv = e.target.result;
+          elements = Papa.parse(csv, { header: true }).data.map((row) => ({
+            name: row.Name,
+            description: row.Description,
+            color: row.Color,
+            percentage: row.Percentage ? parseInt(row.Percentage) : null,
+          }));
+          updateTable();
+          updateChart();
+        };
+        reader.readAsText(file);
+      });
+      input.click();
+    });
+
+    document.getElementById('dark-mode-button').addEventListener('click', () => {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark-mode', darkMode);
+    });
+
+    function updateTable() {
+      const tbody = document.getElementById('elements-tbody');
+      tbody.innerHTML = '';
+      elements.forEach((element, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="px-4 py-2">${element.name}</td>
+          <td class="px-4 py-2">${element.description}</td>
+          <td class="px-4 py-2">${element.color}</td>
+          <td class="px-4 py-2">${element.percentage !== null ? element.percentage + '%' : ''}</td>
+          <td class="px-4 py-2">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded" id="edit-button-${index}">Edit</button>
+            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="delete-button-${index}">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+        document.getElementById(`edit-button-${index}`).addEventListener('click', () => {
+          const form = `
+            <form id="edit-form" class="max-w-md mx-auto">
+              <label class="block text-sm font-medium text-gray-700">Name</label>
+              <input type="text" id="name" value="${element.name}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+              <label class="block text-sm font-medium text-gray-700">Description</label>
+              <input type="text" id="description" value="${element.description}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+              <label class="block text-sm font-medium text-gray-700">Color</label>
+              <div id="color-picker-edit" class="color-picker mb-4"></div>
+              <label class="block text-sm font-medium text-gray-700">Percentage</label>
+              <input type="number" id="percentage" value="${element.percentage !== null ? element.percentage : ''}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+              <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
+            </form>
+          `;
+          document.getElementById('form-container').innerHTML = form;
+
+          pickrEdit = Pickr.create({
+            el: '#color-picker-edit',
+            theme: 'classic',
+            default: element.color,
+            components: {
+              preview: true,
+              opacity: true,
+              hue: true,
+              interaction: {
+                input: true,
+                save: true
+              }
+            }
+          });
+
+          document.getElementById('edit-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const color = pickrEdit.getColor() ? pickrEdit.getColor().toHEXA().toString() : element.color;
+            const percentage = document.getElementById('percentage').value;
+            elements[index] = {
+              name,
+              description,
+              color,
+              percentage: percentage ? parseInt(percentage) : null,
+            };
+            updateTable();
+            updateChart();
+            document.getElementById('form-container').innerHTML = '';
+            pickrEdit.destroyAndRemove();
+          });
+        });
+        document.getElementById(`delete-button-${index}`).addEventListener('click', () => {
+          elements.splice(index, 1);
+          updateTable();
+          updateChart();
+        });
+      });
+    }
+
+    function updateChart() {
+      if (chart) {
+        chart.destroy();
+      }
+      const ctx = document.getElementById('pie-chart').getContext('2d');
+      const specifiedPercentages = elements.map((element) => element.percentage !== null ? element.percentage : 0);
+      const totalSpecified = specifiedPercentages.reduce((acc, curr) => acc + curr, 0);
+      const countUnspecified = elements.filter((element) => element.percentage === null).length;
+      const autoPercentage = countUnspecified > 0 ? (100 - totalSpecified) / countUnspecified : 0;
+      const chartPercentages = elements.map((element) => element.percentage !== null ? element.percentage : autoPercentage);
+
+      chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: elements.map((element) => element.name),
+          datasets: [{
+            label: 'Elements',
+            data: chartPercentages,
+            backgroundColor: elements.map((element) => element.color),
+            borderColor: elements.map((element) => element.color),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            datalabels: {
+              font: {
+                family: 'Arial',
+                size: 14
+              },
+              color: (context) => {
+                const bgColor = context.chart.data.datasets[0].backgroundColor[context.dataIndex];
+                return getComplementary(bgColor);
+              },
+              formatter: (value, context) => {
+                const label = context.chart.data.labels[context.dataIndex];
+                return `${label}: ${Math.round(value * 100) / 100}%`;
+              }
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+  </script>
+</body>
+</html>
