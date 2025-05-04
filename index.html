@@ -1,328 +1,294 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pie Chart App - Tabs</title>
-  <!-- Tailwind CSS (kept on cdn.jsdelivr.net) -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-  />
-  <!-- Pickr CSS (switched to unpkg.com) -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/@simonwep/pickr@1.8.2/dist/themes/classic.min.css"
-  />
-  <!-- Chart.js Core (switched to unpkg.com) -->
-  <script src="https://unpkg.com/chart.js@3.7.1/dist/chart.min.js"></script>
-  <!-- Chart.js Plugin Datalabels (switched to unpkg.com) -->
-  <script src="https://unpkg.com/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <!-- PapaParse for CSV handling (switched to unpkg.com) -->
-  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
-  <!-- Pickr for color picking (switched to unpkg.com) -->
-  <script src="https://unpkg.com/@simonwep/pickr@1.8.2/dist/pickr.min.js"></script>
-  <!-- Chart.js Sankey Plugin (switched to unpkg.com) -->
-  <script src="https://unpkg.com/chartjs-chart-sankey@0.10.1/dist/chartjs-chart-sankey.min.js"></script>
-  <!-- Register the Sankey chart type with logging -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (typeof Chart === "undefined") {
-        console.error("Chart.js is not loaded.");
-        return;
-      }
-      if (typeof ChartSankey === "undefined") {
-        console.error("Chart.js Sankey plugin is not loaded.");
-        return;
-      }
-      Chart.register(ChartSankey.SankeyController, ChartSankey.SankeyElement);
-      console.log("Sankey chart registered successfully.");
-    });
-  </script>
-  <style>
-    .dark-mode {
-      filter: invert(1);
-      background-color: #222;
-    }
-
-    .dark-mode canvas {
-      filter: invert(1);
-    }
-
-    body.dark-mode .pcr-app,
-    body.dark-mode .pcr {
-      filter: invert(1) !important;
-    }
-
-    .color-picker {
-      display: inline-block;
-      min-width: 200px;
-    }
-
-    .tab-btn {
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .active-tab {
-      border-bottom: 2px solid #3b82f6;
-    }
-  </style>
-</head>
-  <body class="bg-gray-100">
-    <!-- Tab Navigation with Dark Mode Button -->
-    <div class="container mx-auto p-4 flex justify-between items-center">
-      <div class="flex">
-        <button id="tab-manual" class="tab-btn active-tab text-blue-500">
-          Manual Pie Chart
-        </button>
-        <button id="tab-market" class="tab-btn ml-4 text-gray-500">
-          Market Pie Chart
-        </button>
-        <button id="tab-sankey" class="tab-btn ml-4 text-gray-500">
-          Sankey Diagram
-        </button>
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Pie Chart App - Tabs</title>
+      <link
+         rel="stylesheet"
+         href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+         />
+      <link
+         rel="stylesheet"
+         href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"
+         />
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+      <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/dist/papaparse.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sankey"></script>
+      <style>
+         .dark-mode {
+         filter: invert(1);
+         background-color: #222;
+         }
+         .dark-mode canvas {
+         filter: invert(1);
+         }
+         body.dark-mode .pcr-app,
+         body.dark-mode .pcr {
+         filter: invert(1) !important;
+         }
+         .color-picker {
+         display: inline-block;
+         min-width: 200px;
+         }
+         .tab-btn {
+         padding: 0.5rem 1rem;
+         font-weight: 600;
+         cursor: pointer;
+         }
+         .active-tab {
+         border-bottom: 2px solid #3b82f6;
+         }
+      </style>
+   </head>
+   <body class="bg-gray-100">
+      <!-- Tab Navigation with Dark Mode Button -->
+      <div class="container mx-auto p-4 flex justify-between items-center">
+         <div class="flex">
+            <button id="tab-manual" class="tab-btn active-tab text-blue-500">
+            Manual Pie Chart
+            </button>
+            <button id="tab-market" class="tab-btn ml-4 text-gray-500">
+            Market Pie Chart
+            </button>
+            <button id="tab-sankey" class="tab-btn ml-4 text-gray-500">
+            Sankey Diagram
+            </button>
+         </div>
+         <button
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            id="dark-mode-button"
+            >
+         🌓
+         </button>
       </div>
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        id="dark-mode-button"
-      >
-        🌓
-      </button>
-    </div>
-    <!-- Tab Contents -->
-    <div class="container mx-auto p-4" id="tab-content-manual">
-      <!-- First Pie Maker -->
-      <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
-        Pie Chart App
-      </h1>
-      <div class="flex flex-wrap justify-center gap-4 mb-6">
-        <button
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          id="add-button"
-        >
-          Add Element
-        </button>
-        <button
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          id="export-button"
-        >
-          Export CSV
-        </button>
-        <button
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          id="import-button"
-        >
-          Import CSV
-        </button>
+      <!-- Tab Contents -->
+      <div class="container mx-auto p-4" id="tab-content-manual">
+         <!-- First Pie Maker -->
+         <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
+            Pie Chart App
+         </h1>
+         <div class="flex flex-wrap justify-center gap-4 mb-6">
+            <button
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+               id="add-button"
+               >
+            Add Element
+            </button>
+            <button
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+               id="export-button"
+               >
+            Export CSV
+            </button>
+            <button
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+               id="import-button"
+               >
+            Import CSV
+            </button>
+         </div>
+         <div class="mb-6" id="form-container"></div>
+         <div class="overflow-x-auto">
+            <table class="table-auto w-full mb-6">
+               <thead>
+                  <tr>
+                     <th class="px-4 py-2">Name</th>
+                     <th class="px-4 py-2">Description</th>
+                     <th class="px-4 py-2">Color</th>
+                     <th class="px-4 py-2">Percentage</th>
+                     <th class="px-4 py-2">Actions</th>
+                  </tr>
+               </thead>
+               <tbody id="elements-tbody"></tbody>
+            </table>
+         </div>
+         <div class="w-full" style="height: 400px">
+            <canvas id="pie-chart" class="w-full h-full"></canvas>
+         </div>
       </div>
-      <div class="mb-6" id="form-container"></div>
-      <div class="overflow-x-auto">
-        <table class="table-auto w-full mb-6">
-          <thead>
-            <tr>
-              <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Description</th>
-              <th class="px-4 py-2">Color</th>
-              <th class="px-4 py-2">Percentage</th>
-              <th class="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="elements-tbody"></tbody>
-        </table>
+      <div
+         class="container mx-auto p-4"
+         id="tab-content-market"
+         style="display: none"
+         >
+         <!-- Second Pie Maker: Market Data -->
+         <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
+            Market Pie Chart App
+         </h1>
+         <div class="flex flex-wrap justify-center gap-4 mb-6">
+            <button
+               class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+               id="market-add-button"
+               >
+            Add Asset
+            </button>
+            <button
+               class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+               id="market-export-button"
+               >
+            Export CSV
+            </button>
+            <button
+               class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+               id="market-import-button"
+               >
+            Import CSV
+            </button>
+         </div>
+         <div class="mb-6" id="market-form-container"></div>
+         <div class="overflow-x-auto">
+            <table class="table-auto w-full mb-6">
+               <thead>
+                  <tr>
+                     <th class="px-4 py-2">Symbol</th>
+                     <th class="px-4 py-2">Name</th>
+                     <th class="px-4 py-2">Asset Type</th>
+                     <th class="px-4 py-2">Unit</th>
+                     <th class="px-4 py-2">Quantity</th>
+                     <th class="px-4 py-2">Price per Unit ($)</th>
+                     <th class="px-4 py-2">Total Value ($)</th>
+                     <th class="px-4 py-2">Color</th>
+                     <th class="px-4 py-2">Actions</th>
+                  </tr>
+               </thead>
+               <tbody id="market-tbody"></tbody>
+            </table>
+         </div>
+         <div class="w-full" style="height: 400px">
+            <canvas id="market-pie-chart" class="w-full h-full"></canvas>
+         </div>
       </div>
-      <div class="w-full" style="height: 400px">
-        <canvas id="pie-chart" class="w-full h-full"></canvas>
+      <div
+         class="container mx-auto p-4"
+         id="tab-content-sankey"
+         style="display: none"
+         >
+         <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
+            Sankey Diagram App
+         </h1>
+         <div class="flex flex-wrap justify-center gap-4 mb-6">
+            <button
+               class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+               id="sankey-add-income"
+               >
+            Add Income
+            </button>
+            <button
+               class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+               id="sankey-add-expense"
+               >
+            Add Expense
+            </button>
+            <button
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+               id="sankey-export"
+               >
+            Export CSV
+            </button>
+            <button
+               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+               id="sankey-import"
+               >
+            Import CSV
+            </button>
+         </div>
+         <div class="mb-6" id="sankey-form-container"></div>
+         <div class="overflow-x-auto mb-6">
+            <h2 class="text-xl font-bold mb-2">Incomes</h2>
+            <table class="table-auto w-full mb-4">
+               <thead>
+                  <tr>
+                     <th class="px-4 py-2">Name</th>
+                     <th class="px-4 py-2">Amount</th>
+                     <th class="px-4 py-2">Actions</th>
+                  </tr>
+               </thead>
+               <tbody id="sankey-incomes-tbody"></tbody>
+            </table>
+            <h2 class="text-xl font-bold mb-2">Expenses</h2>
+            <table class="table-auto w-full mb-4">
+               <thead>
+                  <tr>
+                     <th class="px-4 py-2">Name</th>
+                     <th class="px-4 py-2">Category</th>
+                     <th class="px-4 py-2">Amount</th>
+                     <th class="px-4 py-2">Actions</th>
+                  </tr>
+               </thead>
+               <tbody id="sankey-expenses-tbody"></tbody>
+            </table>
+         </div>
+         <div class="w-full" style="height: 600px">
+            <canvas id="sankey-chart" class="w-full h-full"></canvas>
+         </div>
       </div>
-    </div>
-    <div
-      class="container mx-auto p-4"
-      id="tab-content-market"
-      style="display: none"
-    >
-      <!-- Second Pie Maker: Market Data -->
-      <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
-        Market Pie Chart App
-      </h1>
-      <div class="flex flex-wrap justify-center gap-4 mb-6">
-        <button
-          class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          id="market-add-button"
-        >
-          Add Asset
-        </button>
-        <button
-          class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          id="market-export-button"
-        >
-          Export CSV
-        </button>
-        <button
-          class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          id="market-import-button"
-        >
-          Import CSV
-        </button>
-      </div>
-      <div class="mb-6" id="market-form-container"></div>
-      <div class="overflow-x-auto">
-        <table class="table-auto w-full mb-6">
-          <thead>
-            <tr>
-              <th class="px-4 py-2">Symbol</th>
-              <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Asset Type</th>
-              <th class="px-4 py-2">Unit</th>
-              <th class="px-4 py-2">Quantity</th>
-              <th class="px-4 py-2">Price per Unit ($)</th>
-              <th class="px-4 py-2">Total Value ($)</th>
-              <th class="px-4 py-2">Color</th>
-              <th class="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="market-tbody"></tbody>
-        </table>
-      </div>
-      <div class="w-full" style="height: 400px">
-        <canvas id="market-pie-chart" class="w-full h-full"></canvas>
-      </div>
-    </div>
-    <div
-      class="container mx-auto p-4"
-      id="tab-content-sankey"
-      style="display: none"
-    >
-      <h1 class="text-2xl sm:text-3xl font-bold mb-4 text-center">
-        Sankey Diagram App
-      </h1>
-      <div class="flex flex-wrap justify-center gap-4 mb-6">
-        <select
-          id="currency-select"
-          class="p-2 border border-gray-300 rounded-md"
-        >
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="GBP">GBP</option>
-          <option value="JPY">JPY</option>
-        </select>
-        <button
-          class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          id="add-income-button"
-        >
-          Add Income
-        </button>
-        <button
-          class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-          id="add-expense-button"
-        >
-          Add Expense
-        </button>
-      </div>
-      <div class="mb-6" id="sankey-form-container"></div>
-      <div class="flex flex-wrap justify-center gap-4 mb-6">
-        <div id="gross-income" class="p-4 bg-blue-100 rounded-md">
-          Gross Income: 0 USD
-        </div>
-        <div id="total-expenses" class="p-4 bg-red-100 rounded-md">
-          Total Expenses: 0 USD
-        </div>
-        <div id="net-income" class="p-4 bg-green-100 rounded-md">
-          Net Income: 0 USD
-        </div>
-      </div>
-      <div class="overflow-x-auto mb-6">
-        <h2 class="text-xl font-bold mb-2">Incomes</h2>
-        <table class="table-auto w-full mb-4">
-          <thead>
-            <tr>
-              <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Amount</th>
-              <th class="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="incomes-tbody"></tbody>
-        </table>
-        <h2 class="text-xl font-bold mb-2">Expenses</h2>
-        <table class="table-auto w-full mb-4">
-          <thead>
-            <tr>
-              <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Amount</th>
-              <th class="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="expenses-tbody"></tbody>
-        </table>
-      </div>
-      <div class="w-full" style="height: 400px">
-        <canvas id="sankey-chart" class="w-full h-full"></canvas>
-      </div>
-    </div>
-    <script>
-      // Tab Switching Logic
-      const tabManual = document.getElementById("tab-manual");
-      const tabMarket = document.getElementById("tab-market");
-      const tabSankey = document.getElementById("tab-sankey");
-      const contentManual = document.getElementById("tab-content-manual");
-      const contentMarket = document.getElementById("tab-content-market");
-      const contentSankey = document.getElementById("tab-content-sankey");
-
-      tabManual.addEventListener("click", () => {
-        contentManual.style.display = "block";
-        contentMarket.style.display = "none";
-        contentSankey.style.display = "none";
-        tabManual.classList.add("active-tab");
-        tabManual.classList.replace("text-gray-500", "text-blue-500");
-        tabMarket.classList.remove("active-tab");
-        tabMarket.classList.replace("text-blue-500", "text-gray-500");
-        tabSankey.classList.remove("active-tab");
-        tabSankey.classList.replace("text-blue-500", "text-gray-500");
-      });
-
-      tabMarket.addEventListener("click", () => {
-        contentManual.style.display = "none";
-        contentMarket.style.display = "block";
-        contentSankey.style.display = "none";
-        tabMarket.classList.add("active-tab");
-        tabMarket.classList.replace("text-gray-500", "text-blue-500");
-        tabManual.classList.remove("active-tab");
-        tabManual.classList.replace("text-blue-500", "text-gray-500");
-        tabSankey.classList.remove("active-tab");
-        tabSankey.classList.replace("text-blue-500", "text-gray-500");
-      });
-
-      tabSankey.addEventListener("click", () => {
-        contentManual.style.display = "none";
-        contentMarket.style.display = "none";
-        contentSankey.style.display = "block";
-        tabSankey.classList.add("active-tab");
-        tabSankey.classList.replace("text-gray-500", "text-blue-500");
-        tabManual.classList.remove("active-tab");
-        tabManual.classList.replace("text-blue-500", "text-gray-500");
-        tabMarket.classList.remove("active-tab");
-        tabMarket.classList.replace("text-blue-500", "text-gray-500");
-      });
-
-      // ===================== First Pie Maker Code (unchanged) =====================
-      let elements = [];
-      let chart;
-      let darkMode = false;
-      let pickrAdd, pickrEdit;
-
-      function getComplementary(hex) {
-        hex = hex.replace("#", "");
-        let r = parseInt(hex.substr(0, 2), 16);
-        let g = parseInt(hex.substr(2, 2), 16);
-        let b = parseInt(hex.substr(4, 2), 16);
-        let compR = (255 - r).toString(16).padStart(2, "0");
-        let compG = (255 - g).toString(16).padStart(2, "0");
-        let compB = (255 - b).toString(16).padStart(2, "0");
-        return "#" + compR + compG + compB;
-      }
-
-      document.getElementById("add-button").addEventListener("click", () => {
-        const form = `
+      <script>
+         // Tab Switching Logic
+         const tabManual = document.getElementById("tab-manual");
+         const tabMarket = document.getElementById("tab-market");
+         const tabSankey = document.getElementById("tab-sankey");
+         const contentManual = document.getElementById("tab-content-manual");
+         const contentMarket = document.getElementById("tab-content-market");
+         const contentSankey = document.getElementById("tab-content-sankey");
+         
+         tabManual.addEventListener("click", () => {
+           contentManual.style.display = "block";
+           contentMarket.style.display = "none";
+           contentSankey.style.display = "none";
+           tabManual.classList.add("active-tab");
+           tabManual.classList.replace("text-gray-500", "text-blue-500");
+           tabMarket.classList.remove("active-tab");
+           tabMarket.classList.replace("text-blue-500", "text-gray-500");
+           tabSankey.classList.remove("active-tab");
+           tabSankey.classList.replace("text-blue-500", "text-gray-500");
+         });
+         
+         tabMarket.addEventListener("click", () => {
+           contentManual.style.display = "none";
+           contentMarket.style.display = "block";
+           contentSankey.style.display = "none";
+           tabMarket.classList.add("active-tab");
+           tabMarket.classList.replace("text-gray-500", "text-blue-500");
+           tabManual.classList.remove("active-tab");
+           tabManual.classList.replace("text-blue-500", "text-gray-500");
+           tabSankey.classList.remove("active-tab");
+           tabSankey.classList.replace("text-blue-500", "text-gray-500");
+         });
+         
+         tabSankey.addEventListener("click", () => {
+           contentManual.style.display = "none";
+           contentMarket.style.display = "none";
+           contentSankey.style.display = "block";
+           tabSankey.classList.add("active-tab");
+           tabSankey.classList.replace("text-gray-500", "text-blue-500");
+           tabManual.classList.remove("active-tab");
+           tabManual.classList.replace("text-blue-500", "text-gray-500");
+           tabMarket.classList.remove("active-tab");
+           tabMarket.classList.replace("text-blue-500", "text-gray-500");
+         });
+         
+         // ===================== First Pie Maker Code (unchanged) =====================
+         let elements = [];
+         let chart;
+         let darkMode = false;
+         let pickrAdd, pickrEdit;
+         
+         function getComplementary(hex) {
+           hex = hex.replace("#", "");
+           let r = parseInt(hex.substr(0, 2), 16);
+           let g = parseInt(hex.substr(2, 2), 16);
+           let b = parseInt(hex.substr(4, 2), 16);
+           let compR = (255 - r).toString(16).padStart(2, "0");
+           let compG = (255 - g).toString(16).padStart(2, "0");
+           let compB = (255 - b).toString(16).padStart(2, "0");
+           return "#" + compR + compG + compB;
+         }
+         
+         document.getElementById("add-button").addEventListener("click", () => {
+           const form = `
              <form id="add-form" class="max-w-md mx-auto">
                <label class="block text-sm font-medium text-gray-700">Name</label>
                <input type="text" id="name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
@@ -335,102 +301,101 @@
                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add</button>
              </form>
            `;
-        document.getElementById("form-container").innerHTML = form;
-        pickrAdd = Pickr.create({
-          el: "#color-picker-add",
-          theme: "classic",
-          default: "#ffffff",
-          components: {
-            preview: true,
-            opacity: true,
-            hue: true,
-            interaction: { input: true, save: true },
-          },
-        });
-        document.getElementById("add-form").addEventListener("submit", (e) => {
-          e.preventDefault();
-          const name = document.getElementById("name").value;
-          const description = document.getElementById("description").value;
-          const color = pickrAdd.getColor()
-            ? pickrAdd.getColor().toHEXA().toString()
-            : "#ffffff";
-          const percentage = document.getElementById("percentage").value;
-          elements.push({
-            name,
-            description,
-            color,
-            percentage: percentage ? parseInt(percentage) : null,
-          });
-          updateTable();
-          updateChart();
-          document.getElementById("form-container").innerHTML = "";
-          pickrAdd.destroyAndRemove();
-        });
-      });
-
-      document.getElementById("export-button").addEventListener("click", () => {
-        const csv = elements
-          .map((element) => [
-            element.name,
-            element.description,
-            element.color,
-            element.percentage !== null ? element.percentage.toString() : "",
-          ])
-          .reduce(
-            (acc, curr) => acc + curr.join(",") + "\n",
-            "Name,Description,Color,Percentage\n"
-          );
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "elements.csv";
-        a.click();
-      });
-
-      document.getElementById("import-button").addEventListener("click", () => {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".csv";
-        input.addEventListener("change", (e) => {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const csv = e.target.result.trim();
-            const rows = csv
-              .split("\n")
-              .map((row) => row.split(",").map((col) => col.trim()));
-            const headers = rows.shift();
-            elements = rows.map((row) => ({
-              name: row[headers.indexOf("Name")],
-              description: row[headers.indexOf("Description")],
-              color: row[headers.indexOf("Color")],
-              percentage: row[headers.indexOf("Percentage")]
-                ? parseInt(row[headers.indexOf("Percentage")], 10)
-                : null,
-            }));
-            updateTable();
-            updateChart();
-          };
-          reader.readAsText(file);
-        });
-        input.click();
-      });
-
-      // Dark Mode Toggle
-      document
-        .getElementById("dark-mode-button")
-        .addEventListener("click", () => {
-          darkMode = !darkMode;
-          document.body.classList.toggle("dark-mode", darkMode);
-        });
-
-      function updateTable() {
-        const tbody = document.getElementById("elements-tbody");
-        tbody.innerHTML = "";
-        elements.forEach((element, index) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
+           document.getElementById("form-container").innerHTML = form;
+           pickrAdd = Pickr.create({
+             el: "#color-picker-add",
+             theme: "classic",
+             default: "#ffffff",
+             components: {
+               preview: true,
+               opacity: true,
+               hue: true,
+               interaction: { input: true, save: true },
+             },
+           });
+           document.getElementById("add-form").addEventListener("submit", (e) => {
+             e.preventDefault();
+             const name = document.getElementById("name").value;
+             const description = document.getElementById("description").value;
+             const color = pickrAdd.getColor()
+               ? pickrAdd.getColor().toHEXA().toString()
+               : "#ffffff";
+             const percentage = document.getElementById("percentage").value;
+             elements.push({
+               name,
+               description,
+               color,
+               percentage: percentage ? parseInt(percentage) : null,
+             });
+             updateTable();
+             updateChart();
+             document.getElementById("form-container").innerHTML = "";
+             pickrAdd.destroyAndRemove();
+           });
+         });
+         
+         document.getElementById("export-button").addEventListener("click", () => {
+           const csv = elements
+             .map((element) => [
+               element.name,
+               element.description,
+               element.color,
+               element.percentage !== null ? element.percentage.toString() : "",
+             ])
+             .reduce(
+               (acc, curr) => acc + curr.join(",") + "\n",
+               "Name,Description,Color,Percentage\n"
+             );
+           const blob = new Blob([csv], { type: "text/csv" });
+           const url = URL.createObjectURL(blob);
+           const a = document.createElement("a");
+           a.href = url;
+           a.download = "elements.csv";
+           a.click();
+         });
+         
+         document.getElementById("import-button").addEventListener("click", () => {
+           const input = document.createElement("input");
+           input.type = "file";
+           input.accept = ".csv";
+           input.addEventListener("change", (e) => {
+             const file = e.target.files[0];
+             const reader = new FileReader();
+             reader.onload = (e) => {
+               const csv = e.target.result.trim();
+               const rows = csv
+                 .split("\n")
+                 .map((row) => row.split(",").map((col) => col.trim()));
+               const headers = rows.shift();
+               elements = rows.map((row) => ({
+                 name: row[headers.indexOf("Name")],
+                 description: row[headers.indexOf("Description")],
+                 color: row[headers.indexOf("Color")],
+                 percentage: row[headers.indexOf("Percentage")]
+                   ? parseInt(row[headers.indexOf("Percentage")], 10)
+                   : null,
+               }));
+               updateTable();
+               updateChart();
+             };
+             reader.readAsText(file);
+           });
+           input.click();
+         });
+         
+         document
+           .getElementById("dark-mode-button")
+           .addEventListener("click", () => {
+             darkMode = !darkMode;
+             document.body.classList.toggle("dark-mode", darkMode);
+           });
+         
+         function updateTable() {
+           const tbody = document.getElementById("elements-tbody");
+           tbody.innerHTML = "";
+           elements.forEach((element, index) => {
+             const row = document.createElement("tr");
+             row.innerHTML = `
                <td class="px-4 py-2">${element.name}</td>
                <td class="px-4 py-2">${element.description}</td>
                <td class="px-4 py-2">${element.color}</td>
@@ -442,11 +407,11 @@
                  <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="delete-button-${index}">🗑️</button>
                </td>
              `;
-          tbody.appendChild(row);
-          document
-            .getElementById(`edit-button-${index}`)
-            .addEventListener("click", () => {
-              const form = `
+             tbody.appendChild(row);
+             document
+               .getElementById(`edit-button-${index}`)
+               .addEventListener("click", () => {
+                 const form = `
                  <form id="edit-form" class="max-w-md mx-auto">
                    <label class="block text-sm font-medium text-gray-700">Name</label>
                    <input type="text" id="name" value="${
@@ -465,859 +430,917 @@
                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
                  </form>
                `;
-              document.getElementById("form-container").innerHTML = form;
-              pickrEdit = Pickr.create({
-                el: "#color-picker-edit",
-                theme: "classic",
-                default: element.color,
-                components: {
-                  preview: true,
-                  opacity: true,
-                  hue: true,
-                  interaction: { input: true, save: true },
-                },
-              });
-              document
-                .getElementById("edit-form")
-                .addEventListener("submit", (e) => {
-                  e.preventDefault();
-                  const name = document.getElementById("name").value;
-                  const description =
-                    document.getElementById("description").value;
-                  const color = pickrEdit.getColor()
-                    ? pickrEdit.getColor().toHEXA().toString()
-                    : element.color;
-                  const percentage =
-                    document.getElementById("percentage").value;
-                  elements[index] = {
-                    name,
-                    description,
-                    color,
-                    percentage: percentage ? parseInt(percentage) : null,
-                  };
-                  updateTable();
-                  updateChart();
-                  document.getElementById("form-container").innerHTML = "";
-                  pickrEdit.destroyAndRemove();
-                });
-            });
-          document
-            .getElementById(`delete-button-${index}`)
-            .addEventListener("click", () => {
-              elements.splice(index, 1);
-              updateTable();
-              updateChart();
-            });
-        });
-      }
-
-      function updateChart() {
-        if (chart) {
-          chart.destroy();
-        }
-        const ctx = document.getElementById("pie-chart").getContext("2d");
-        const specifiedPercentages = elements.map((el) =>
-          el.percentage !== null ? el.percentage : 0
-        );
-        const totalSpecified = specifiedPercentages.reduce(
-          (acc, curr) => acc + curr,
-          0
-        );
-        const countUnspecified = elements.filter(
-          (el) => el.percentage === null
-        ).length;
-        const autoPercentage =
-          countUnspecified > 0 ? (100 - totalSpecified) / countUnspecified : 0;
-        const chartPercentages = elements.map((el) =>
-          el.percentage !== null ? el.percentage : autoPercentage
-        );
-        const legendSpacingPlugin = {
-          id: "legendSpacing",
-          beforeLayout: (chart) => {
-            const legendHeight = chart.legend.height;
-            chart.legend.height = legendHeight + 80;
-          },
-        };
-        chart = new Chart(ctx, {
-          type: "pie",
-          data: {
-            labels: elements.map((el) => el.name),
-            datasets: [
-              {
-                label: "Elements",
-                data: chartPercentages,
-                backgroundColor: elements.map((el) => el.color),
-                borderColor: elements.map((el) => el.color),
-                borderWidth: 1,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 40, bottom: 40, left: 0, right: 0 } },
-            plugins: {
-              legend: {
-                position: "left",
-                labels: { padding: 10, font: { size: 12 } },
-              },
-              datalabels: {
-                align: "end",
-                anchor: "end",
-                backgroundColor: (context) =>
-                  context.dataset.backgroundColor[context.dataIndex],
-                borderRadius: 4,
-                padding: 6,
-                color: (context) => {
-                  const bgColor =
-                    context.dataset.backgroundColor[context.dataIndex];
-                  return getComplementary(bgColor);
-                },
-                formatter: (value, context) => {
-                  const label = context.chart.data.labels[context.dataIndex];
-                  return `${label}: ${Math.round(value * 100) / 100}%`;
-                },
-                offset: 10,
-                overlap: false,
-                clamp: true,
-                clip: false,
-                overflow: "fit",
-              },
-            },
-          },
-          plugins: [legendSpacingPlugin, ChartDataLabels],
-        });
-      }
-
-      // ===================== Second Pie Maker: Market Pie Maker =====================
-      let marketAssets = [];
-      let marketChart;
-      let marketPickrEdit;
-      let marketPickrAdd;
-      let currentMarketResults = [];
-
-      // Use Yahoo Finance's search endpoint to fetch asset suggestions
-      function searchMarketAssets(query) {
-        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-        const targetUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
-          query
-        )}`;
-        return fetch(proxyUrl + targetUrl)
-          .then((response) => response.json())
-          .then((data) => {
-            if (data && data.quotes) {
-              return data.quotes.map((asset) => {
-                let type = asset.quoteType || "Stock";
-                let units = [];
-                if (type.toUpperCase() === "CRYPTOCURRENCY") {
-                  units.push("coins");
-                } else {
-                  units.push("shares");
-                }
-                return {
-                  symbol: asset.symbol,
-                  name: asset.shortname || asset.longname || asset.symbol,
-                  type: type,
-                  units: units,
-                };
-              });
-            }
-            return [];
-          })
-          .catch((err) => {
-            console.error("Error fetching Yahoo Finance data:", err);
-            return [];
-          });
-      }
-
-      // Use Yahoo Finance's quote endpoint to fetch current price
-      function fetchAssetPrice(symbol) {
-        return fetch(
-          `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-            symbol
-          )}`
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            if (
-              data &&
-              data.quoteResponse &&
-              data.quoteResponse.result &&
-              data.quoteResponse.result.length > 0
-            ) {
-              return data.quoteResponse.result[0].regularMarketPrice;
-            }
-            return 0;
-          });
-      }
-
-      function getUnitOptions(asset) {
-        return asset.units;
-      }
-
-      function updateMarketTable() {
-        const tbody = document.getElementById("market-tbody");
-        tbody.innerHTML = "";
-        marketAssets.forEach((asset, index) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-                 <td class="px-4 py-2">${asset.symbol}</td>
-                 <td class="px-4 py-2">${asset.name}</td>
-                 <td class="px-4 py-2">${asset.type}</td>
-                 <td class="px-4 py-2">${asset.unit}</td>
-                 <td class="px-4 py-2">${asset.quantity}</td>
-                 <td class="px-4 py-2">${asset.price.toFixed(2)}</td>
-                 <td class="px-4 py-2">${asset.totalValue.toFixed(2)}</td>
-                 <td class="px-4 py-2">${asset.color}</td>
-                 <td class="px-4 py-2">
-                   <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" id="market-edit-button-${index}">📝</button>
-                   <button class="bg-red-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" id="market-delete-button-${index}">🗑️</button>
-                 </td>
+                 document.getElementById("form-container").innerHTML = form;
+                 pickrEdit = Pickr.create({
+                   el: "#color-picker-edit",
+                   theme: "classic",
+                   default: element.color,
+                   components: {
+                     preview: true,
+                     opacity: true,
+                     hue: true,
+                     interaction: { input: true, save: true },
+                   },
+                 });
+                 document
+                   .getElementById("edit-form")
+                   .addEventListener("submit", (e) => {
+                     e.preventDefault();
+                     const name = document.getElementById("name").value;
+                     const description =
+                       document.getElementById("description").value;
+                     const color = pickrEdit.getColor()
+                       ? pickrEdit.getColor().toHEXA().toString()
+                       : element.color;
+                     const percentage =
+                       document.getElementById("percentage").value;
+                     elements[index] = {
+                       name,
+                       description,
+                       color,
+                       percentage: percentage ? parseInt(percentage) : null,
+                     };
+                     updateTable();
+                     updateChart();
+                     document.getElementById("form-container").innerHTML = "";
+                     pickrEdit.destroyAndRemove();
+                   });
+               });
+             document
+               .getElementById(`delete-button-${index}`)
+               .addEventListener("click", () => {
+                 elements.splice(index, 1);
+                 updateTable();
+                 updateChart();
+               });
+           });
+         }
+         
+         function updateChart() {
+           if (chart) {
+             chart.destroy();
+           }
+           const ctx = document.getElementById("pie-chart").getContext("2d");
+           const specifiedPercentages = elements.map((el) =>
+             el.percentage !== null ? el.percentage : 0
+           );
+           const totalSpecified = specifiedPercentages.reduce(
+             (acc, curr) => acc + curr,
+             0
+           );
+           const countUnspecified = elements.filter(
+             (el) => el.percentage === null
+           ).length;
+           const autoPercentage =
+             countUnspecified > 0 ? (100 - totalSpecified) / countUnspecified : 0;
+           const chartPercentages = elements.map((el) =>
+             el.percentage !== null ? el.percentage : autoPercentage
+           );
+           const legendSpacingPlugin = {
+             id: "legendSpacing",
+             beforeLayout: (chart) => {
+               const legendHeight = chart.legend.height;
+               chart.legend.height = legendHeight + 80;
+             },
+           };
+           chart = new Chart(ctx, {
+             type: "pie",
+             data: {
+               labels: elements.map((el) => el.name),
+               datasets: [
+                 {
+                   label: "Elements",
+                   data: chartPercentages,
+                   backgroundColor: elements.map((el) => el.color),
+                   borderColor: elements.map((el) => el.color),
+                   borderWidth: 1,
+                 },
+               ],
+             },
+             options: {
+               responsive: true,
+               maintainAspectRatio: false,
+               layout: { padding: { top: 40, bottom: 40, left: 0, right: 0 } },
+               plugins: {
+                 legend: {
+                   position: "left",
+                   labels: { padding: 10, font: { size: 12 } },
+                 },
+                 datalabels: {
+                   align: "end",
+                   anchor: "end",
+                   backgroundColor: (context) =>
+                     context.dataset.backgroundColor[context.dataIndex],
+                   borderRadius: 4,
+                   padding: 6,
+                   color: (context) =>
+                     getComplementary(
+                       context.dataset.backgroundColor[context.dataIndex]
+                     ),
+                   formatter: (value, context) =>
+                     `${context.chart.data.labels[context.dataIndex]}: ${
+                       Math.round(value * 100) / 100
+                     }%`,
+                   offset: 10,
+                   overlap: false,
+                   clamp: true,
+                   clip: false,
+                   overflow: "fit",
+                 },
+               },
+               plugins: [legendSpacingPlugin, ChartDataLabels],
+             },
+           });
+         }
+         
+         // ===================== Second Pie Maker: Market Pie Maker =====================
+         let marketAssets = [];
+         let marketChart;
+         let marketPickrEdit;
+         let marketPickrAdd;
+         let currentMarketResults = [];
+         
+         function searchMarketAssets(query) {
+           const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+           const targetUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
+             query
+           )}`;
+           return fetch(proxyUrl + targetUrl)
+             .then((response) => response.json())
+             .then((data) => {
+               if (data && data.quotes) {
+                 return data.quotes.map((asset) => {
+                   let type = asset.quoteType || "Stock";
+                   let units = [];
+                   if (type.toUpperCase() === "CRYPTOCURRENCY")
+                     units.push("coins");
+                   else units.push("shares");
+                   return {
+                     symbol: asset.symbol,
+                     name: asset.shortname || asset.longname || asset.symbol,
+                     type,
+                     units,
+                   };
+                 });
+               }
+               return [];
+             })
+             .catch((err) => {
+               console.error("Error fetching Yahoo Finance data:", err);
+               return [];
+             });
+         }
+         
+         function fetchAssetPrice(symbol) {
+           return fetch(
+             `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
+               symbol
+             )}`
+           )
+             .then((response) => response.json())
+             .then((data) => {
+               if (
+                 data &&
+                 data.quoteResponse &&
+                 data.quoteResponse.result &&
+                 data.quoteResponse.result.length > 0
+               ) {
+                 return data.quoteResponse.result[0].regularMarketPrice;
+               }
+               return 0;
+             });
+         }
+         
+         function getUnitOptions(asset) {
+           return asset.units;
+         }
+         
+         function updateMarketTable() {
+           const tbody = document.getElementById("market-tbody");
+           tbody.innerHTML = "";
+           marketAssets.forEach((asset, index) => {
+             const row = document.createElement("tr");
+             row.innerHTML = `
+               <td class="px-4 py-2">${asset.symbol}</td>
+               <td class="px-4 py-2">${asset.name}</td>
+               <td class="px-4 py-2">${asset.type}</td>
+               <td class="px-4 py-2">${asset.unit}</td>
+               <td class="px-4 py-2">${asset.quantity}</td>
+               <td class="px-4 py-2">${asset.price.toFixed(2)}</td>
+               <td class="px-4 py-2">${asset.totalValue.toFixed(2)}</td>
+               <td class="px-4 py-2">${asset.color}</td>
+               <td class="px-4 py-2">
+                 <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" id="market-edit-button-${index}">📝</button>
+                 <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="market-delete-button-${index}">🗑️</button>
+               </td>
+             `;
+             tbody.appendChild(row);
+             document
+               .getElementById(`market-edit-button-${index}`)
+               .addEventListener("click", () => {
+                 const form = `
+                 <form id="market-edit-form" class="max-w-md mx-auto">
+                   <label class="block text-sm font-medium text-gray-700">Symbol</label>
+                   <input type="text" id="market-symbol" value="${
+                     asset.symbol
+                   }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
+                   <label class="block text-sm font-medium text-gray-700">Name</label>
+                   <input type="text" id="market-name" value="${
+                     asset.name
+                   }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
+                   <label class="block text-sm font-medium text-gray-700">Asset Type</label>
+                   <input type="text" id="market-type" value="${
+                     asset.type
+                   }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
+                   <label class="block text-sm font-medium text-gray-700">Unit</label>
+                   <select id="market-unit" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+                     ${getUnitOptions(asset)
+                       .map(
+                         (u) =>
+                           `<option value="${u}" ${
+                             u === asset.unit ? "selected" : ""
+                           }>${u}</option>`
+                       )
+                       .join("")}
+                   </select>
+                   <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                   <input type="number" id="market-quantity" value="${
+                     asset.quantity
+                   }" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+                   <label class="block text-sm font-medium text-gray-700">Color</label>
+                   <div id="market-color-picker-edit" class="color-picker mb-4"></div>
+                   <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Save</button>
+                 </form>
                `;
-          tbody.appendChild(row);
-          document
-            .getElementById(`market-edit-button-${index}`)
-            .addEventListener("click", () => {
-              const form = `
-                   <form id="market-edit-form" class="max-w-md mx-auto">
-                     <label class="block text-sm font-medium text-gray-700">Symbol</label>
-                     <input type="text" id="market-symbol" value="${
-                       asset.symbol
-                     }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
-                     <label class="block text-sm font-medium text-gray-700">Name</label>
-                     <input type="text" id="market-name" value="${
-                       asset.name
-                     }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
-                     <label class="block text-sm font-medium text-gray-700">Asset Type</label>
-                     <input type="text" id="market-type" value="${
-                       asset.type
-                     }" class="w-full p-2 mb-4 border border-gray-300 rounded-md" readonly>
-                     <label class="block text-sm font-medium text-gray-700">Unit</label>
-                     <select id="market-unit" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-                       ${getUnitOptions(asset)
-                         .map(
-                           (u) =>
-                             `<option value="${u}" ${
-                               u === asset.unit ? "selected" : ""
-                             }>${u}</option>`
-                         )
-                         .join("")}
-                     </select>
-                     <label class="block text-sm font-medium text-gray-700">Quantity</label>
-                     <input type="number" id="market-quantity" value="${
-                       asset.quantity
-                     }" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-                     <label class="block text-sm font-medium text-gray-700">Color</label>
-                     <div id="market-color-picker-edit" class="color-picker mb-4"></div>
-                     <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Save</button>
-                   </form>
-                 `;
-              document.getElementById("market-form-container").innerHTML = form;
-              marketPickrEdit = Pickr.create({
-                el: "#market-color-picker-edit",
-                theme: "classic",
-                default: asset.color,
-                components: {
-                  preview: true,
-                  opacity: true,
-                  hue: true,
-                  interaction: { input: true, save: true },
-                },
-              });
-              document
-                .getElementById("market-edit-form")
-                .addEventListener("submit", (e) => {
-                  e.preventDefault();
-                  const unit = document.getElementById("market-unit").value;
-                  const quantity = parseFloat(
-                    document.getElementById("market-quantity").value
-                  );
-                  fetchAssetPrice(asset.symbol).then((price) => {
-                    let adjustedQuantity = quantity;
-                    if (asset.type === "Raw Material" && unit === "kilos") {
-                      adjustedQuantity = quantity * 1000;
-                    }
-                    const totalValue = adjustedQuantity * price;
-                    marketAssets[index] = {
-                      ...asset,
-                      unit,
-                      quantity,
-                      price,
-                      totalValue,
-                      color: marketPickrEdit.getColor()
-                        ? marketPickrEdit.getColor().toHEXA().toString()
-                        : asset.color,
-                    };
-                    updateMarketTable();
-                    updateMarketChart();
-                    document.getElementById("market-form-container").innerHTML =
-                      "";
-                    marketPickrEdit.destroyAndRemove();
-                  });
-                });
-            });
-          document
-            .getElementById(`market-delete-button-${index}`)
-            .addEventListener("click", () => {
-              marketAssets.splice(index, 1);
-              updateMarketTable();
-              updateMarketChart();
-            });
-        });
-      }
-
-      function updateMarketChart() {
-        if (marketChart) {
-          marketChart.destroy();
-        }
-        const ctx = document
-          .getElementById("market-pie-chart")
-          .getContext("2d");
-        const totalMarketValue = marketAssets.reduce(
-          (acc, asset) => acc + asset.totalValue,
-          0
-        );
-        const chartPercentages = marketAssets.map((asset) =>
-          totalMarketValue ? (asset.totalValue / totalMarketValue) * 100 : 0
-        );
-        const legendSpacingPlugin = {
-          id: "legendSpacing",
-          beforeLayout: (chart) => {
-            const legendHeight = chart.legend.height;
-            chart.legend.height = legendHeight + 80;
-          },
-        };
-        marketChart = new Chart(ctx, {
-          type: "pie",
-          data: {
-            labels: marketAssets.map((asset) => asset.name),
-            datasets: [
-              {
-                label: "Market Assets",
-                data: chartPercentages,
-                backgroundColor: marketAssets.map((asset) => asset.color),
-                borderColor: marketAssets.map((asset) => asset.color),
-                borderWidth: 1,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 40, bottom: 40, left: 0, right: 0 } },
-            plugins: {
-              legend: {
-                position: "left",
-                labels: { padding: 10, font: { size: 12 } },
-              },
-              datalabels: {
-                align: "end",
-                anchor: "end",
-                backgroundColor: (context) =>
-                  context.dataset.backgroundColor[context.dataIndex],
-                borderRadius: 4,
-                padding: 6,
-                color: (context) => {
-                  const bgColor =
-                    context.dataset.backgroundColor[context.dataIndex];
-                  return getComplementary(bgColor);
-                },
-                formatter: (value, context) => {
-                  const label = context.chart.data.labels[context.dataIndex];
-                  return `${label}: ${Math.round(value * 100) / 100}%`;
-                },
-                offset: 10,
-                overlap: false,
-                clamp: true,
-                clip: false,
-                overflow: "fit",
-              },
-            },
-          },
-          plugins: [legendSpacingPlugin, ChartDataLabels],
-        });
-      }
-
-      // Market Asset Add Form handling using Yahoo Finance API for real data
-      document
-        .getElementById("market-add-button")
-        .addEventListener("click", () => {
-          const form = `
-              <form id="market-add-form" class="max-w-md mx-auto">
-                <label class="block text-sm font-medium text-gray-700">Search Asset</label>
-                <input type="text" id="market-search" class="w-full p-2 mb-4 border border-gray-300 rounded-md" placeholder="Enter asset name or symbol">
-                <div id="market-suggestions" class="mb-4"></div>
-                <div id="market-asset-details" style="display:none;">
-                  <label class="block text-sm font-medium text-gray-700">Asset: <span id="selected-asset-name"></span></label>
-                  <input type="hidden" id="selected-asset-symbol">
-                  <input type="hidden" id="selected-asset-type">
-                  <label class="block text-sm font-medium text-gray-700">Unit</label>
-                  <select id="market-unit" class="w-full p-2 mb-4 border border-gray-300 rounded-md"></select>
-                  <label class="block text-sm font-medium text-gray-700">Quantity</label>
-                  <input type="number" id="market-quantity" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="any">
-                  <label class="block text-sm font-medium text-gray-700">Color</label>
-                  <div id="market-color-picker-add" class="color-picker mb-4"></div>
-                  <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Asset</button>
-                </div>
-              </form>
-            `;
-          document.getElementById("market-form-container").innerHTML = form;
-          const searchInput = document.getElementById("market-search");
-          const suggestionsDiv = document.getElementById("market-suggestions");
-
-          // When the user types, search Yahoo Finance for matching assets
-          searchInput.addEventListener("input", () => {
-            const query = searchInput.value.trim();
-            if (query.length > 1) {
-              searchMarketAssets(query).then((results) => {
-                currentMarketResults = results;
-                suggestionsDiv.innerHTML = results
-                  .map(
-                    (asset) =>
-                      `<div class="cursor-pointer p-2 hover:bg-gray-200" data-symbol="${asset.symbol}">${asset.symbol} - ${asset.name}</div>`
-                  )
-                  .join("");
-                Array.from(suggestionsDiv.children).forEach((child) => {
-                  child.addEventListener("click", () => {
-                    const symbol = child.getAttribute("data-symbol");
-                    const selectedAsset = currentMarketResults.find(
-                      (a) => a.symbol === symbol
-                    );
-                    document.getElementById("selected-asset-name").innerText =
-                      selectedAsset.name;
-                    document.getElementById("selected-asset-symbol").value =
-                      selectedAsset.symbol;
-                    document.getElementById("selected-asset-type").value =
-                      selectedAsset.type;
-                    const unitSelect = document.getElementById("market-unit");
-                    unitSelect.innerHTML = getUnitOptions(selectedAsset)
-                      .map((u) => `<option value="${u}">${u}</option>`)
-                      .join("");
-                    document.getElementById(
-                      "market-asset-details"
-                    ).style.display = "block";
-                    suggestionsDiv.innerHTML = "";
-                    searchInput.value = selectedAsset.name;
-                  });
-                });
-              });
-            } else {
-              suggestionsDiv.innerHTML = "";
-            }
-          });
-
-          marketPickrAdd = Pickr.create({
-            el: "#market-color-picker-add",
-            theme: "classic",
-            default: "#ffffff",
-            components: {
-              preview: true,
-              opacity: true,
-              hue: true,
-              interaction: { input: true, save: true },
-            },
-          });
-
-          document
-            .getElementById("market-add-form")
-            .addEventListener("submit", (e) => {
-              e.preventDefault();
-              const symbol = document.getElementById(
-                "selected-asset-symbol"
-              ).value;
-              const name = document.getElementById(
-                "selected-asset-name"
-              ).innerText;
-              const type = document.getElementById("selected-asset-type").value;
-              const unit = document.getElementById("market-unit").value;
-              const quantity = parseFloat(
-                document.getElementById("market-quantity").value
-              );
-              const color = marketPickrAdd.getColor()
-                ? marketPickrAdd.getColor().toHEXA().toString()
-                : "#ffffff";
-              fetchAssetPrice(symbol).then((price) => {
-                let adjustedQuantity = quantity;
-                if (type === "Raw Material" && unit === "kilos") {
-                  adjustedQuantity = quantity * 1000;
-                }
-                const totalValue = adjustedQuantity * price;
-                marketAssets.push({
-                  symbol,
-                  name,
-                  type,
-                  unit,
-                  quantity,
-                  price,
-                  totalValue,
-                  color,
-                });
-                updateMarketTable();
-                updateMarketChart();
-                document.getElementById("market-form-container").innerHTML = "";
-                marketPickrAdd.destroyAndRemove();
-              });
-            });
-        });
-
-      document
-        .getElementById("market-export-button")
-        .addEventListener("click", () => {
-          const csv = marketAssets
-            .map((asset) => [
-              asset.symbol,
-              asset.name,
-              asset.type,
-              asset.unit,
-              asset.quantity,
-              asset.price,
-              asset.totalValue,
-              asset.color,
-            ])
-            .reduce(
-              (acc, curr) => acc + curr.join(",") + "\n",
-              "Symbol,Name,Type,Unit,Quantity,Price,TotalValue,Color\n"
-            );
-          const blob = new Blob([csv], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "market_assets.csv";
-          a.click();
-        });
-
-      document
-        .getElementById("market-import-button")
-        .addEventListener("click", () => {
-          const input = document.createElement("input");
-          input.type = "file";
-          input.accept = ".csv";
-          input.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const csv = e.target.result.trim();
-              const rows = csv
-                .split("\n")
-                .map((row) => row.split(",").map((col) => col.trim()));
-              const headers = rows.shift();
-              marketAssets = rows.map((row) => {
-                const quantity = parseFloat(row[headers.indexOf("Quantity")]);
-                const price = parseFloat(row[headers.indexOf("Price")]);
-                const totalValue = quantity * price;
-                return {
-                  symbol: row[headers.indexOf("Symbol")],
-                  name: row[headers.indexOf("Name")],
-                  type: row[headers.indexOf("Type")],
-                  unit: row[headers.indexOf("Unit")],
-                  quantity,
-                  price,
-                  totalValue,
-                  color: row[headers.indexOf("Color")] || "#ffffff",
-                };
-              });
-              updateMarketTable();
-              updateMarketChart();
-            };
-            reader.readAsText(file);
-          });
-          input.click();
-        });
-
-      // Sankey Diagram Code
-      let currency = "USD"; // Default currency
-      let incomes = [];
-      let expenses = [];
-      let sankeyChart;
-
-      // Handle currency selection
-      document
-        .getElementById("currency-select")
-        .addEventListener("change", (e) => {
-          currency = e.target.value;
-          updateSankeyDisplays();
-          updateSankeyChart();
-        });
-
-      // Add Income
-      document
-        .getElementById("add-income-button")
-        .addEventListener("click", () => {
-          const form = `
-    <form id="add-income-form" class="max-w-md mx-auto">
-      <label class="block text-sm font-medium text-gray-700">Name</label>
-      <input type="text" id="income-name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-      <label class="block text-sm font-medium text-gray-700">Amount</label>
-      <input type="number" id="income-amount" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01" min="0">
-      <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Income</button>
-    </form>
-  `;
-          document.getElementById("sankey-form-container").innerHTML = form;
-          document
-            .getElementById("add-income-form")
-            .addEventListener("submit", (e) => {
-              e.preventDefault();
-              const name =
-                document.getElementById("income-name").value.trim() ||
-                "Unnamed Income";
-              const amountInput =
-                document.getElementById("income-amount").value;
-              const amount = parseFloat(amountInput);
-
-              if (isNaN(amount) || amount <= 0) {
-                alert("Please enter a valid positive amount for income.");
-                return;
-              }
-
-              incomes.push({ name, amount });
-              updateIncomesTable();
-              updateSankeyDisplays();
-              updateSankeyChart();
-              document.getElementById("sankey-form-container").innerHTML = "";
-            });
-        });
-
-      // Add Expense
-      document
-        .getElementById("add-expense-button")
-        .addEventListener("click", () => {
-          const form = `
-    <form id="add-expense-form" class="max-w-md mx-auto">
-      <label class="block text-sm font-medium text-gray-700">Name</label>
-      <input type="text" id="expense-name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-      <label class="block text-sm font-medium text-gray-700">Amount</label>
-      <input type="number" id="expense-amount" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01" min="0">
-      <button type="submit" class="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Expense</button>
-    </form>
-  `;
-          document.getElementById("sankey-form-container").innerHTML = form;
-          document
-            .getElementById("add-expense-form")
-            .addEventListener("submit", (e) => {
-              e.preventDefault();
-              const name =
-                document.getElementById("expense-name").value.trim() ||
-                "Unnamed Expense";
-              const amountInput =
-                document.getElementById("expense-amount").value;
-              const amount = parseFloat(amountInput);
-
-              if (isNaN(amount) || amount <= 0) {
-                alert("Please enter a valid positive amount for expense.");
-                return;
-              }
-
-              expenses.push({ name, amount });
-              updateExpensesTable();
-              updateSankeyDisplays();
-              updateSankeyChart();
-              document.getElementById("sankey-form-container").innerHTML = "";
-            });
-        });
-
-      // Update Incomes Table
-      function updateIncomesTable() {
-        const tbody = document.getElementById("incomes-tbody");
-        tbody.innerHTML = "";
-        incomes.forEach((income, index) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
+                 document.getElementById("market-form-container").innerHTML = form;
+                 marketPickrEdit = Pickr.create({
+                   el: "#market-color-picker-edit",
+                   theme: "classic",
+                   default: asset.color,
+                   components: {
+                     preview: true,
+                     opacity: true,
+                     hue: true,
+                     interaction: { input: true, save: true },
+                   },
+                 });
+                 document
+                   .getElementById("market-edit-form")
+                   .addEventListener("submit", (e) => {
+                     e.preventDefault();
+                     const unit = document.getElementById("market-unit").value;
+                     const quantity = parseFloat(
+                       document.getElementById("market-quantity").value
+                     );
+                     fetchAssetPrice(asset.symbol).then((price) => {
+                       let adjustedQuantity = quantity;
+                       if (asset.type === "Raw Material" && unit === "kilos")
+                         adjustedQuantity = quantity * 1000;
+                       const totalValue = adjustedQuantity * price;
+                       marketAssets[index] = {
+                         ...asset,
+                         unit,
+                         quantity,
+                         price,
+                         totalValue,
+                         color: marketPickrEdit.getColor()
+                           ? marketPickrEdit.getColor().toHEXA().toString()
+                           : asset.color,
+                       };
+                       updateMarketTable();
+                       updateMarketChart();
+                       document.getElementById("market-form-container").innerHTML =
+                         "";
+                       marketPickrEdit.destroyAndRemove();
+                     });
+                   });
+               });
+             document
+               .getElementById(`market-delete-button-${index}`)
+               .addEventListener("click", () => {
+                 marketAssets.splice(index, 1);
+                 updateMarketTable();
+                 updateMarketChart();
+               });
+           });
+         }
+         
+         function updateMarketChart() {
+           if (marketChart) {
+             marketChart.destroy();
+           }
+           const ctx = document
+             .getElementById("market-pie-chart")
+             .getContext("2d");
+           const totalMarketValue = marketAssets.reduce(
+             (acc, asset) => acc + asset.totalValue,
+             0
+           );
+           const chartPercentages = marketAssets.map((asset) =>
+             totalMarketValue ? (asset.totalValue / totalMarketValue) * 100 : 0
+           );
+           const legendSpacingPlugin = {
+             id: "legendSpacing",
+             beforeLayout: (chart) => {
+               const legendHeight = chart.legend.height;
+               chart.legend.height = legendHeight + 80;
+             },
+           };
+           marketChart = new Chart(ctx, {
+             type: "pie",
+             data: {
+               labels: marketAssets.map((asset) => asset.name),
+               datasets: [
+                 {
+                   label: "Market Assets",
+                   data: chartPercentages,
+                   backgroundColor: marketAssets.map((asset) => asset.color),
+                   borderColor: marketAssets.map((asset) => asset.color),
+                   borderWidth: 1,
+                 },
+               ],
+             },
+             options: {
+               responsive: true,
+               maintainAspectRatio: false,
+               layout: { padding: { top: 40, bottom: 40, left: 0, right: 0 } },
+               plugins: {
+                 legend: {
+                   position: "left",
+                   labels: { padding: 10, font: { size: 12 } },
+                 },
+                 datalabels: {
+                   align: "end",
+                   anchor: "end",
+                   backgroundColor: (context) =>
+                     context.dataset.backgroundColor[context.dataIndex],
+                   borderRadius: 4,
+                   padding: 6,
+                   color: (context) =>
+                     getComplementary(
+                       context.dataset.backgroundColor[context.dataIndex]
+                     ),
+                   formatter: (value, context) =>
+                     `${context.chart.data.labels[context.dataIndex]}: ${
+                       Math.round(value * 100) / 100
+                     }%`,
+                   offset: 10,
+                   overlap: false,
+                   clamp: true,
+                   clip: false,
+                   overflow: "fit",
+                 },
+               },
+               plugins: [legendSpacingPlugin, ChartDataLabels],
+             },
+           });
+         }
+         
+         document
+           .getElementById("market-add-button")
+           .addEventListener("click", () => {
+             const form = `
+             <form id="market-add-form" class="max-w-md mx-auto">
+               <label class="block text-sm font-medium text-gray-700">Search Asset</label>
+               <input type="text" id="market-search" class="w-full p-2 mb-4 border border-gray-300 rounded-md" placeholder="Enter asset name or symbol">
+               <div id="market-suggestions" class="mb-4"></div>
+               <div id="market-asset-details" style="display:none;">
+                 <label class="block text-sm font-medium text-gray-700">Asset: <span id="selected-asset-name"></span></label>
+                 <input type="hidden" id="selected-asset-symbol">
+                 <input type="hidden" id="selected-asset-type">
+                 <label class="block text-sm font-medium text-gray-700">Unit</label>
+                 <select id="market-unit" class="w-full p-2 mb-4 border border-gray-300 rounded-md"></select>
+                 <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                 <input type="number" id="market-quantity" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="any">
+                 <label class="block text-sm font-medium text-gray-700">Color</label>
+                 <div id="market-color-picker-add" class="color-picker mb-4"></div>
+                 <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Asset</button>
+               </div>
+             </form>
+           `;
+             document.getElementById("market-form-container").innerHTML = form;
+             const searchInput = document.getElementById("market-search");
+             const suggestionsDiv = document.getElementById("market-suggestions");
+         
+             searchInput.addEventListener("input", () => {
+               const query = searchInput.value.trim();
+               if (query.length > 1) {
+                 searchMarketAssets(query).then((results) => {
+                   currentMarketResults = results;
+                   suggestionsDiv.innerHTML = results
+                     .map(
+                       (asset) =>
+                         `<div class="cursor-pointer p-2 hover:bg-gray-200" data-symbol="${asset.symbol}">${asset.symbol} - ${asset.name}</div>`
+                     )
+                     .join("");
+                   Array.from(suggestionsDiv.children).forEach((child) => {
+                     child.addEventListener("click", () => {
+                       const symbol = child.getAttribute("data-symbol");
+                       const selectedAsset = currentMarketResults.find(
+                         (a) => a.symbol === symbol
+                       );
+                       document.getElementById("selected-asset-name").innerText =
+                         selectedAsset.name;
+                       document.getElementById("selected-asset-symbol").value =
+                         selectedAsset.symbol;
+                       document.getElementById("selected-asset-type").value =
+                         selectedAsset.type;
+                       const unitSelect = document.getElementById("market-unit");
+                       unitSelect.innerHTML = getUnitOptions(selectedAsset)
+                         .map((u) => `<option value="${u}">${u}</option>`)
+                         .join("");
+                       document.getElementById(
+                         "market-asset-details"
+                       ).style.display = "block";
+                       suggestionsDiv.innerHTML = "";
+                       searchInput.value = selectedAsset.name;
+                     });
+                   });
+                 });
+               } else {
+                 suggestionsDiv.innerHTML = "";
+               }
+             });
+         
+             marketPickrAdd = Pickr.create({
+               el: "#market-color-picker-add",
+               theme: "classic",
+               default: "#ffffff",
+               components: {
+                 preview: true,
+                 opacity: true,
+                 hue: true,
+                 interaction: { input: true, save: true },
+               },
+             });
+         
+             document
+               .getElementById("market-add-form")
+               .addEventListener("submit", (e) => {
+                 e.preventDefault();
+                 const symbol = document.getElementById(
+                   "selected-asset-symbol"
+                 ).value;
+                 const name = document.getElementById(
+                   "selected-asset-name"
+                 ).innerText;
+                 const type = document.getElementById("selected-asset-type").value;
+                 const unit = document.getElementById("market-unit").value;
+                 const quantity = parseFloat(
+                   document.getElementById("market-quantity").value
+                 );
+                 const color = marketPickrAdd.getColor()
+                   ? marketPickrAdd.getColor().toHEXA().toString()
+                   : "#ffffff";
+                 fetchAssetPrice(symbol).then((price) => {
+                   let adjustedQuantity = quantity;
+                   if (type === "Raw Material" && unit === "kilos")
+                     adjustedQuantity = quantity * 1000;
+                   const totalValue = adjustedQuantity * price;
+                   marketAssets.push({
+                     symbol,
+                     name,
+                     type,
+                     unit,
+                     quantity,
+                     price,
+                     totalValue,
+                     color,
+                   });
+                   updateMarketTable();
+                   updateMarketChart();
+                   document.getElementById("market-form-container").innerHTML = "";
+                   marketPickrAdd.destroyAndRemove();
+                 });
+               });
+           });
+         
+         document
+           .getElementById("market-export-button")
+           .addEventListener("click", () => {
+             const csv = marketAssets
+               .map((asset) => [
+                 asset.symbol,
+                 asset.name,
+                 asset.type,
+                 asset.unit,
+                 asset.quantity,
+                 asset.price,
+                 asset.totalValue,
+                 asset.color,
+               ])
+               .reduce(
+                 (acc, curr) => acc + curr.join(",") + "\n",
+                 "Symbol,Name,Type,Unit,Quantity,Price,TotalValue,Color\n"
+               );
+             const blob = new Blob([csv], { type: "text/csv" });
+             const url = URL.createObjectURL(blob);
+             const a = document.createElement("a");
+             a.href = url;
+             a.download = "market_assets.csv";
+             a.click();
+           });
+         
+         document
+           .getElementById("market-import-button")
+           .addEventListener("click", () => {
+             const input = document.createElement("input");
+             input.type = "file";
+             input.accept = ".csv";
+             input.addEventListener("change", (e) => {
+               const file = e.target.files[0];
+               const reader = new FileReader();
+               reader.onload = (e) => {
+                 const csv = e.target.result.trim();
+                 const rows = csv
+                   .split("\n")
+                   .map((row) => row.split(",").map((col) => col.trim()));
+                 const headers = rows.shift();
+                 marketAssets = rows.map((row) => {
+                   const quantity = parseFloat(row[headers.indexOf("Quantity")]);
+                   const price = parseFloat(row[headers.indexOf("Price")]);
+                   const totalValue = quantity * price;
+                   return {
+                     symbol: row[headers.indexOf("Symbol")],
+                     name: row[headers.indexOf("Name")],
+                     type: row[headers.indexOf("Type")],
+                     unit: row[headers.indexOf("Unit")],
+                     quantity,
+                     price,
+                     totalValue,
+                     color: row[headers.indexOf("Color")] || "#ffffff",
+                   };
+                 });
+                 updateMarketTable();
+                 updateMarketChart();
+               };
+               reader.readAsText(file);
+             });
+             input.click();
+           });
+         
+         // ===================== Sankey Diagram Code =====================
+         let sankeyIncomes = [];
+         let sankeyExpenses = [];
+         let sankeyChart;
+         
+         document
+           .getElementById("sankey-add-income")
+           .addEventListener("click", () => {
+             const form = `
+         <form id="sankey-add-income-form" class="max-w-md mx-auto">
+           <label class="block text-sm font-medium text-gray-700">Income Name</label>
+           <input type="text" id="income-name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+           <label class="block text-sm font-medium text-gray-700">Amount</label>
+           <input type="number" id="income-amount" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
+           <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Income</button>
+         </form>
+         `;
+             document.getElementById("sankey-form-container").innerHTML = form;
+             document
+               .getElementById("sankey-add-income-form")
+               .addEventListener("submit", (e) => {
+                 e.preventDefault();
+                 const name = document.getElementById("income-name").value;
+                 const amount = parseFloat(
+                   document.getElementById("income-amount").value
+                 );
+                 sankeyIncomes.push({ name, amount });
+                 updateSankeyTables();
+                 updateSankeyChart();
+                 document.getElementById("sankey-form-container").innerHTML = "";
+               });
+           });
+         
+         document
+           .getElementById("sankey-add-expense")
+           .addEventListener("click", () => {
+             const form = `
+         <form id="sankey-add-expense-form" class="max-w-md mx-auto">
+           <label class="block text-sm font-medium text-gray-700">Expense Name</label>
+           <input type="text" id="expense-name" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+           <label class="block text-sm font-medium text-gray-700">Category</label>
+           <select id="expense-category" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+             <option value="Expense">Expense</option>
+             <option value="Investment">Investment</option>
+             <option value="Savings">Savings</option>
+           </select>
+           <label class="block text-sm font-medium text-gray-700">Amount</label>
+           <input type="number" id="expense-amount" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
+           <button type="submit" class="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Add Expense</button>
+         </form>
+         `;
+             document.getElementById("sankey-form-container").innerHTML = form;
+             document
+               .getElementById("sankey-add-expense-form")
+               .addEventListener("submit", (e) => {
+                 e.preventDefault();
+                 const name = document.getElementById("expense-name").value;
+                 const category =
+                   document.getElementById("expense-category").value;
+                 const amount = parseFloat(
+                   document.getElementById("expense-amount").value
+                 );
+                 sankeyExpenses.push({ name, category, amount });
+                 updateSankeyTables();
+                 updateSankeyChart();
+                 document.getElementById("sankey-form-container").innerHTML = "";
+               });
+           });
+         
+         function updateSankeyTables() {
+         const incomesTbody = document.getElementById("sankey-incomes-tbody");
+         incomesTbody.innerHTML = "";
+         sankeyIncomes.forEach((income, index) => {
+         const row = document.createElement("tr");
+         row.innerHTML = `
          <td class="px-4 py-2">${income.name}</td>
-         <td class="px-4 py-2">${income.amount.toFixed(2)} ${currency}</td>
+         <td class="px-4 py-2">${income.amount.toFixed(2)}</td>
          <td class="px-4 py-2">
-           <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded" id="edit-income-${index}">📝</button>
-           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="delete-income-${index}">🗑️</button>
+           <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" id="sankey-edit-income-${index}">📝</button>
+           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="sankey-delete-income-${index}">🗑️</button>
          </td>
          `;
-          tbody.appendChild(row);
-          document
-            .getElementById(`edit-income-${index}`)
-            .addEventListener("click", () => {
-              const form = `
-           <form id="edit-income-form" class="max-w-md mx-auto">
-             <label class="block text-sm font-medium text-gray-700">Name</label>
-             <input type="text" id="income-name" value="${income.name}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-             <label class="block text-sm font-medium text-gray-700">Amount</label>
-             <input type="number" id="income-amount" value="${income.amount}" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
-             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
-           </form>
-         `;
-              document.getElementById("sankey-form-container").innerHTML = form;
-              document
-                .getElementById("edit-income-form")
-                .addEventListener("submit", (e) => {
-                  e.preventDefault();
-                  const name = document.getElementById("income-name").value;
-                  const amount = parseFloat(
-                    document.getElementById("income-amount").value
-                  );
-                  incomes[index] = { name, amount };
-                  updateIncomesTable();
-                  updateSankeyDisplays();
-                  updateSankeyChart();
-                  document.getElementById("sankey-form-container").innerHTML =
-                    "";
-                });
-            });
-          document
-            .getElementById(`delete-income-${index}`)
-            .addEventListener("click", () => {
-              incomes.splice(index, 1);
-              updateIncomesTable();
-              updateSankeyDisplays();
-              updateSankeyChart();
-            });
-        });
-      }
-
-      // Update Expenses Table
-      function updateExpensesTable() {
-        const tbody = document.getElementById("expenses-tbody");
-        tbody.innerHTML = "";
-        expenses.forEach((expense, index) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
+         incomesTbody.appendChild(row);
+         document
+         .getElementById(`sankey-edit-income-${index}`)
+         .addEventListener("click", () => {
+           const form = `
+             <form id="sankey-edit-income-form" class="max-w-md mx-auto">
+               <label class="block text-sm font-medium text-gray-700">Income Name</label>
+               <input type="text" id="income-name" value="${income.name}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+               <label class="block text-sm font-medium text-gray-700">Amount</label>
+               <input type="number" id="income-amount" value="${income.amount}" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
+               <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Save</button>
+             </form>
+           `;
+           document.getElementById("sankey-form-container").innerHTML = form;
+           document
+             .getElementById("sankey-edit-income-form")
+             .addEventListener("submit", (e) => {
+               e.preventDefault();
+               const name = document.getElementById("income-name").value;
+               const amount = parseFloat(
+                 document.getElementById("income-amount").value
+               );
+               sankeyIncomes[index] = { name, amount };
+               updateSankeyTables();
+               updateSankeyChart();
+               document.getElementById("sankey-form-container").innerHTML = "";
+             });
+         });
+         document
+         .getElementById(`sankey-delete-income-${index}`)
+         .addEventListener("click", () => {
+           sankeyIncomes.splice(index, 1);
+           updateSankeyTables();
+           updateSankeyChart();
+         });
+         });
+         
+         const expensesTbody = document.getElementById("sankey-expenses-tbody");
+         expensesTbody.innerHTML = "";
+         sankeyExpenses.forEach((expense, index) => {
+         const row = document.createElement("tr");
+         row.innerHTML = `
          <td class="px-4 py-2">${expense.name}</td>
-         <td class="px-4 py-2">${expense.amount.toFixed(2)} ${currency}</td>
+         <td class="px-4 py-2">${expense.category}</td>
+         <td class="px-4 py-2">${expense.amount.toFixed(2)}</td>
          <td class="px-4 py-2">
-           <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded" id="edit-expense-${index}">📝</button>
-           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="delete-expense-${index}">🗑️</button>
+           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="sankey-edit-expense-${index}">📝</button>
+           <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" id="sankey-delete-expense-${index}">🗑️</button>
          </td>
          `;
-          tbody.appendChild(row);
-          document
-            .getElementById(`edit-expense-${index}`)
-            .addEventListener("click", () => {
-              const form = `
-           <form id="edit-expense-form" class="max-w-md mx-auto">
-             <label class="block text-sm font-medium text-gray-700">Name</label>
-             <input type="text" id="expense-name" value="${expense.name}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
-             <label class="block text-sm font-medium text-gray-700">Amount</label>
-             <input type="number" id="expense-amount" value="${expense.amount}" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
-             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
-           </form>
-         `;
-              document.getElementById("sankey-form-container").innerHTML = form;
-              document
-                .getElementById("edit-expense-form")
-                .addEventListener("submit", (e) => {
-                  e.preventDefault();
-                  const name = document.getElementById("expense-name").value;
-                  const amount = parseFloat(
-                    document.getElementById("expense-amount").value
-                  );
-                  expenses[index] = { name, amount };
-                  updateExpensesTable();
-                  updateSankeyDisplays();
-                  updateSankeyChart();
-                  document.getElementById("sankey-form-container").innerHTML =
-                    "";
-                });
-            });
-          document
-            .getElementById(`delete-expense-${index}`)
-            .addEventListener("click", () => {
-              expenses.splice(index, 1);
-              updateExpensesTable();
-              updateSankeyDisplays();
-              updateSankeyChart();
-            });
-        });
-      }
-
-      // Update Financial Displays
-      function updateSankeyDisplays() {
-        const grossIncome = incomes.reduce(
-          (sum, income) => sum + income.amount,
-          0
-        );
-        const totalExpenses = expenses.reduce(
-          (sum, expense) => sum + expense.amount,
-          0
-        );
-        const netIncome = grossIncome - totalExpenses;
-        document.getElementById(
-          "gross-income"
-        ).innerText = `Gross Income: ${grossIncome.toFixed(2)} ${currency}`;
-        document.getElementById(
-          "total-expenses"
-        ).innerText = `Total Expenses: ${totalExpenses.toFixed(2)} ${currency}`;
-        document.getElementById(
-          "net-income"
-        ).innerText = `Net Income: ${netIncome.toFixed(2)} ${currency}`;
-      }
-
-      // Update Sankey Chart
-      // Update Sankey Chart
-      function updateSankeyChart() {
-        const ctx = document.getElementById("sankey-chart").getContext("2d");
-
-        // Destroy the previous chart if it exists
-        if (sankeyChart && typeof sankeyChart.destroy === "function") {
-          try {
-            sankeyChart.destroy();
-          } catch (e) {
-            console.error("Error destroying previous Sankey chart:", e);
-          }
-        }
-
-        // Calculate financial data
-        const grossIncome = incomes.reduce(
-          (sum, income) => sum + (income.amount || 0),
-          0
-        );
-        const totalExpenses = expenses.reduce(
-          (sum, expense) => sum + (expense.amount || 0),
-          0
-        );
-        const netIncome = grossIncome - totalExpenses;
-
-        // Create links for the Sankey chart
-        const links = [
-          ...incomes.map((income) => ({
-            from: income.name || "Unnamed Income",
-            to: "Total Income",
-            flow: income.amount || 0,
-          })),
-          ...expenses.map((expense) => ({
-            from: "Total Income",
-            to: expense.name || "Unnamed Expense",
-            flow: expense.amount || 0,
-          })),
-          {
-            from: "Total Income",
-            to: "Savings",
-            flow: netIncome > 0 ? netIncome : 0,
-          },
-        ].filter((link) => link.flow > 0); // Filter out zero-flow links
-
-        // Only create the chart if there are valid links
-        if (links.length === 0) {
-          console.warn("No valid links to display in Sankey chart.");
-          return;
-        }
-
-        try {
-          sankeyChart = new Chart(ctx, {
-            type: "sankey",
-            data: {
-              datasets: [
-                {
-                  data: links,
-                  colorFrom: "blue",
-                  colorTo: "green",
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-            },
-          });
-        } catch (error) {
-          console.error("Error creating Sankey chart:", error);
-        }
-      }
-    </script>
-  </body>
+         expensesTbody.appendChild(row);
+         document
+         .getElementById(`sankey-edit-expense-${index}`)
+         .addEventListener("click", () => {
+           const form = `
+             <form id="sankey-edit-expense-form" class="max-w-md mx-auto">
+               <label class="block text-sm font-medium text-gray-700">Expense Name</label>
+               <input type="text" id="expense-name" value="${expense.name}" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+               <label class="block text-sm font-medium text-gray-700">Category</label>
+               <select id="expense-category" class="w-full p-2 mb-4 border border-gray-300 rounded-md">
+                 <option value="Expense" ${expense.category === "Expense" ? "selected" : ""}>Expense</option>
+                 <option value="Investment" ${expense.category === "Investment" ? "selected" : ""}>Investment</option>
+                 <option value="Savings" ${expense.category === "Savings" ? "selected" : ""}>Savings</option>
+               </select>
+               <label class="block text-sm font-medium text-gray-700">Amount</label>
+               <input type="number" id="expense-amount" value="${expense.amount}" class="w-full p-2 mb-4 border border-gray-300 rounded-md" step="0.01">
+               <button type="submit" class="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Save</button>
+             </form>
+           `;
+           document.getElementById("sankey-form-container").innerHTML = form;
+           document
+             .getElementById("sankey-edit-expense-form")
+             .addEventListener("submit", (e) => {
+               e.preventDefault();
+               const name = document.getElementById("expense-name").value;
+               const category = document.getElementById("expense-category").value;
+               const amount = parseFloat(
+                 document.getElementById("expense-amount").value
+               );
+               sankeyExpenses[index] = { name, category, amount };
+               updateSankeyTables();
+               updateSankeyChart();
+               document.getElementById("sankey-form-container").innerHTML = "";
+             });
+         });
+         document
+         .getElementById(`sankey-delete-expense-${index}`)
+         .addEventListener("click", () => {
+           sankeyExpenses.splice(index, 1);
+           updateSankeyTables();
+           updateSankeyChart();
+         });
+         });
+         }
+         function updateSankeyChart() {
+         if (sankeyChart) {
+         sankeyChart.destroy();
+         }
+         const ctx = document.getElementById('sankey-chart').getContext('2d');
+         
+         // Calculate totals
+         const totalIncome = sankeyIncomes.reduce((sum, income) => sum + income.amount, 0);
+         const totalExpenses = sankeyExpenses.filter(e => e.category === 'Expense').reduce((sum, e) => sum + e.amount, 0);
+         const totalInvestments = sankeyExpenses.filter(e => e.category === 'Investment').reduce((sum, e) => sum + e.amount, 0);
+         const totalSavings = sankeyExpenses.filter(e => e.category === 'Savings').reduce((sum, e) => sum + e.amount, 0);
+         const netIncome = totalIncome - (totalExpenses + totalInvestments + totalSavings);
+         
+         // Create labels with amounts
+         const labels = {
+         ...sankeyIncomes.reduce(
+         (acc, income) => ({ ...acc, [income.name]: `${income.name}: $${income.amount.toFixed(2)}` }),
+         {}
+         ),
+         'Gross Income': `Gross Income: $${totalIncome.toFixed(2)}`,
+         ...sankeyExpenses.reduce(
+         (acc, e) => ({ ...acc, [e.name]: `${e.name}: $${e.amount.toFixed(2)}` }),
+         {}
+         ),
+         'Expenses (Empty)': 'Expenses: $0.00',
+         'Investments (Empty)': 'Investments: $0.00',
+         'Savings (Empty)': 'Savings: $0.00',
+         'Net Income': `Net Income: $${netIncome.toFixed(2)}`,
+         };
+         
+         // Define nodes with colors, column positions, and sort for vertical ordering
+         const nodes = [
+         // Column 0: Sources of Income
+         ...sankeyIncomes.map((income, index) => ({ id: income.name, color: 'green', column: 0, sort: index })),
+         
+         // Column 1: Gross Income
+         { id: 'Gross Income', color: 'green', column: 1, sort: 0 },
+         
+         // Column 2: Net Income (top of the column)
+         { id: 'Net Income', color: 'green', column: 2, sort: 0 },
+         
+         // Column 3: Savings
+         ...(sankeyExpenses.filter(e => e.category === 'Savings').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Savings')
+          .map((saving, index) => ({ id: saving.name, color: 'purple', column: 3, sort: index }))
+         : [{ id: 'Savings (Empty)', color: 'purple', column: 3, sort: 0 }]),
+         
+         // Column 4: Investments
+         ...(sankeyExpenses.filter(e => e.category === 'Investment').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Investment')
+          .map((investment, index) => ({ id: investment.name, color: 'orange', column: 4, sort: index }))
+         : [{ id: 'Investments (Empty)', color: 'orange', column: 4, sort: 0 }]),
+         
+         // Column 5: Expenses (bottom of the column)
+         ...(sankeyExpenses.filter(e => e.category === 'Expense').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Expense')
+          .map((expense, index) => ({ id: expense.name, color: 'red', column: 5, sort: index }))
+         : [{ id: 'Expenses (Empty)', color: 'red', column: 5, sort: 0 }]),
+         ];
+         
+         // Define flows to ensure all columns are rendered
+         const flows = [
+         // From Sources of Income to Gross Income
+         ...sankeyIncomes.map(income => ({ from: income.name, to: 'Gross Income', flow: income.amount })),
+         
+         // From Gross Income to Net Income (force column 2)
+         { from: 'Gross Income', to: 'Net Income', flow: netIncome >= 0 ? netIncome : 0 },
+         
+         // From Gross Income to Savings (force column 3)
+         ...(sankeyExpenses.filter(e => e.category === 'Savings').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Savings')
+          .map(saving => ({ from: 'Gross Income', to: saving.name, flow: saving.amount }))
+         : [{ from: 'Gross Income', to: 'Savings (Empty)', flow: 0.001 }]),
+         
+         // From Gross Income to Investments (force column 4)
+         ...(sankeyExpenses.filter(e => e.category === 'Investment').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Investment')
+          .map(investment => ({ from: 'Gross Income', to: investment.name, flow: investment.amount }))
+         : [{ from: 'Gross Income', to: 'Investments (Empty)', flow: 0.001 }]),
+         
+         // From Gross Income to Expenses (force column 5)
+         ...(sankeyExpenses.filter(e => e.category === 'Expense').length > 0
+         ? sankeyExpenses
+          .filter(e => e.category === 'Expense')
+          .map(expense => ({ from: 'Gross Income', to: expense.name, flow: expense.amount }))
+         : [{ from: 'Gross Income', to: 'Expenses (Empty)', flow: 0.001 }]),
+         ];
+         
+         // If Net Income is negative, add a Deficit flow
+         if (netIncome < 0) {
+         nodes.push({ id: 'Deficit', color: 'darkred', column: 2, sort: 1 });
+         labels['Deficit'] = `Deficit: $${(-netIncome).toFixed(2)}`;
+         flows.push({ from: 'Net Income', to: 'Deficit', flow: -netIncome });
+         }
+         
+         // Create priority object to enforce column order
+         const priority = nodes.reduce((acc, node) => {
+         acc[node.id] = node.column * 1000 + (node.sort || 0);
+         return acc;
+         }, {});
+         
+         // Create the Sankey chart
+         sankeyChart = new Chart(ctx, {
+         type: 'sankey',
+         data: {
+         datasets: [{
+         data: flows,
+         colorFrom: (c) => nodes.find(n => n.id === c.dataset.data[c.dataIndex].from).color,
+         colorTo: (c) => nodes.find(n => n.id === c.dataset.data[c.dataIndex].to).color,
+         labels: labels,
+         nodeWidth: 20,
+         nodePadding: 30,
+         nodes: nodes,
+         priority: priority,
+         }]
+         },
+         options: {
+         responsive: true,
+         maintainAspectRatio: false,
+         layout: {
+         padding: {
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: 20
+         }
+         }
+         }
+         });
+         }
+         
+         document.getElementById("sankey-export").addEventListener("click", () => {
+           const csv = [
+             "Type,Name,Category,Amount",
+             ...sankeyIncomes.map(
+               (income) => `Income,${income.name},,${income.amount}`
+             ),
+             ...sankeyExpenses.map(
+               (expense) =>
+                 `Expense,${expense.name},${expense.category},${expense.amount}`
+             ),
+           ].join("\n");
+           const blob = new Blob([csv], { type: "text/csv" });
+           const url = URL.createObjectURL(blob);
+           const a = document.createElement("a");
+           a.href = url;
+           a.download = "sankey_data.csv";
+           a.click();
+         });
+         
+         document.getElementById("sankey-import").addEventListener("click", () => {
+           const input = document.createElement("input");
+           input.type = "file";
+           input.accept = ".csv";
+           input.addEventListener("change", (e) => {
+             const file = e.target.files[0];
+             const reader = new FileReader();
+             reader.onload = (e) => {
+               const csv = e.target.result.trim();
+               const rows = csv
+                 .split("\n")
+                 .map((row) => row.split(",").map((col) => col.trim()));
+               const headers = rows.shift();
+               sankeyIncomes = [];
+               sankeyExpenses = [];
+               rows.forEach((row) => {
+                 const type = row[0];
+                 const name = row[1];
+                 const category = row[2] || "Expense"; // Default to Expense if category is missing
+                 const amount = parseFloat(row[3]);
+                 if (type === "Income") sankeyIncomes.push({ name, amount });
+                 else if (type === "Expense")
+                   sankeyExpenses.push({ name, category, amount });
+               });
+               updateSankeyTables();
+               updateSankeyChart();
+             };
+             reader.readAsText(file);
+           });
+           input.click();
+         });
+      </script>
+   </body>
 </html>
