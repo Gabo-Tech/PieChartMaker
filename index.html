@@ -1,74 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pie Chart App - Tabs</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"
-    />
-    <!-- Chart.js Core -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-    <!-- Chart.js Plugins -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    <!-- PapaParse for CSV handling -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/dist/papaparse.min.js"></script>
-    <!-- Pickr for color picking -->
-    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-    <!-- Chart.js Sankey Plugin -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sankey@0.10.1/dist/chartjs-chart-sankey.min.js"></script>
-    <!-- Register the Sankey chart type -->
-    <script>
-      // Ensure Chart.js and Sankey plugin are loaded before registering
-      document.addEventListener("DOMContentLoaded", () => {
-        // Register the Sankey controller
-        if (
-          typeof Chart !== "undefined" &&
-          typeof ChartSankey !== "undefined"
-        ) {
-          Chart.register(
-            ChartSankey.SankeyController,
-            ChartSankey.SankeyElement
-          );
-        }
-      });
-    </script>
-    <style>
-      .dark-mode {
-        filter: invert(1);
-        background-color: #222;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pie Chart App - Tabs</title>
+  <!-- Tailwind CSS (kept on cdn.jsdelivr.net) -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+  />
+  <!-- Pickr CSS (switched to unpkg.com) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/@simonwep/pickr@1.8.2/dist/themes/classic.min.css"
+  />
+  <!-- Chart.js Core (switched to unpkg.com) -->
+  <script src="https://unpkg.com/chart.js@3.7.1/dist/chart.min.js"></script>
+  <!-- Chart.js Plugin Datalabels (switched to unpkg.com) -->
+  <script src="https://unpkg.com/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <!-- PapaParse for CSV handling (switched to unpkg.com) -->
+  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+  <!-- Pickr for color picking (switched to unpkg.com) -->
+  <script src="https://unpkg.com/@simonwep/pickr@1.8.2/dist/pickr.min.js"></script>
+  <!-- Chart.js Sankey Plugin (switched to unpkg.com) -->
+  <script src="https://unpkg.com/chartjs-chart-sankey@0.10.1/dist/chartjs-chart-sankey.min.js"></script>
+  <!-- Register the Sankey chart type with logging -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof Chart === "undefined") {
+        console.error("Chart.js is not loaded.");
+        return;
       }
+      if (typeof ChartSankey === "undefined") {
+        console.error("Chart.js Sankey plugin is not loaded.");
+        return;
+      }
+      Chart.register(ChartSankey.SankeyController, ChartSankey.SankeyElement);
+      console.log("Sankey chart registered successfully.");
+    });
+  </script>
+  <style>
+    .dark-mode {
+      filter: invert(1);
+      background-color: #222;
+    }
 
-      .dark-mode canvas {
-        filter: invert(1);
-      }
+    .dark-mode canvas {
+      filter: invert(1);
+    }
 
-      body.dark-mode .pcr-app,
-      body.dark-mode .pcr {
-        filter: invert(1) !important;
-      }
+    body.dark-mode .pcr-app,
+    body.dark-mode .pcr {
+      filter: invert(1) !important;
+    }
 
-      .color-picker {
-        display: inline-block;
-        min-width: 200px;
-      }
+    .color-picker {
+      display: inline-block;
+      min-width: 200px;
+    }
 
-      .tab-btn {
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        cursor: pointer;
-      }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
-      .active-tab {
-        border-bottom: 2px solid #3b82f6;
-      }
-    </style>
-  </head>
+    .active-tab {
+      border-bottom: 2px solid #3b82f6;
+    }
+  </style>
+</head>
   <body class="bg-gray-100">
     <!-- Tab Navigation with Dark Mode Button -->
     <div class="container mx-auto p-4 flex justify-between items-center">
